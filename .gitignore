@@ -1,0 +1,11 @@
+*.idea/*
+**_pycache__/
+**.csv
+**.txt
+**.png
+**.html
+**.pdf
+**.h5
+**.pkl
+**.npy
+**.keras
