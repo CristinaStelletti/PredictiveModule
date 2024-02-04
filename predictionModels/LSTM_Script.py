@@ -1,19 +1,19 @@
+import os
+
+import keras.models
 import numpy as np
 import pandas as pd
-from keras import Input
-from keras.models import Sequential
-from keras.layers import LSTM, Dense
-from keras.src.callbacks import EarlyStopping
 from sklearn.preprocessing import RobustScaler
 import tensorflow as tf
+
 import Utils
 
 configs = Utils.load_configs()
 
 JUDGE_MOVING_AVG_FIELD = configs.get('JsonFields', 'judge.moving.average.by.object.field')
-AVG_CONTEMPORANEITY_INDEX_FIELD = configs.get('JsonFields', 'average.contemporaneity.index.field')
 FILE_PATH = configs.get('FilePaths', 'lstm.univariate.metrics.filepath')
 N_STEPS = int(configs.get('ModelParams', 'time.steps.LSTM'))
+CHECKPOINTING_DIR = configs.get('FilePaths', 'lstm.univariate.checkpointing.dir')
 
 
 def runLSTM(dataset, judge, judicial_object):
@@ -21,19 +21,9 @@ def runLSTM(dataset, judge, judicial_object):
     tf.random.set_seed(42)
 
     data = dataset[JUDGE_MOVING_AVG_FIELD]
-    print(len(data))
-
-    n_units = 50
-    n_units2 = 48
-    n_epochs = 100
-    n_features = 1
-    batch_size = 64
-    n_steps = N_STEPS  # il numero di valori passati che devo osservare per predire il valore futuro
-    activation_function = 'relu'
-    loss_function = 'mae'
-    opt = 'nadam'
 
     perc_test = 0.10
+    n_steps = N_STEPS
 
     scaler = RobustScaler()
 
@@ -48,33 +38,10 @@ def runLSTM(dataset, judge, judicial_object):
     X_train, y_train = Utils.split_sequence(serie_train, n_steps)
     X_test, y_test = Utils.split_sequence(serie_test, n_steps)
 
-    for i in range(X_train.shape[0]):
-        print(f"X: {X_train[i]} -> y: {y_train[i]}")
+    files = os.listdir(CHECKPOINTING_DIR)
+    model_filepath = CHECKPOINTING_DIR+'/'+files[0]
 
-    model = Sequential()
-    model.add(Input((n_steps, n_features), None))
-    model.add(LSTM(n_units, activation=activation_function))  # , return_sequences=True))
-    # model.add(LSTM(n_units, activation=activation_function, input_shape=(n_steps, n_features), return_sequences=True))
-    # model.add(LSTM(n_units2, activation=activation_function, return_sequences=False))
-    model.add(Dense(1))
-
-    model.compile(optimizer=opt, loss=loss_function)
-
-    model.summary()
-
-    checkpoint_filepath = '../checkpoint_univariateLSTM/checkpoint.h5'
-    checkpoint = tf.keras.callbacks.ModelCheckpoint(filepath=checkpoint_filepath,
-                                                    monitor="val_loss",
-                                                    save_best_only=True, verbose=0)
-
-    # fit model
-    history = model.fit(X_train, y_train, epochs=n_epochs, validation_split=0.10, verbose=1, batch_size=batch_size,
-                        shuffle=False,
-                        callbacks=[EarlyStopping(monitor="val_loss", patience=10, min_delta=0.01), checkpoint])
-    # patience -> numero consecutivo di epoche che non portano a miglioramenti per cui si deve fermare
-
-    model.load_weights(checkpoint_filepath)
-    Utils.show_loss(history, f"Modello LSTM Univariate - giudice {judge} - materia {judicial_object} - Confronto tra training e validation loss")
+    model = keras.models.load_model(model_filepath, compile=False)
 
     y_pred = model.predict(X_test, verbose=0)
 

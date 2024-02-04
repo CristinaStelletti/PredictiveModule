@@ -3,20 +3,16 @@ services:
   predictiveModule:
     image: predictive_module_image
     volumes:
-      - ./config.properties:/PredictiveModule/config.properties
-    environment:
-      - FILE_PATH=/PredictiveModule/config.properties
+      - ../PredictiveModule:/PredictiveModule
     networks:
       - predictiveModuleNetwork
     depends_on:
       - mongodb
 
   mongodb:
-    image: mongo:latest
+    image: mongo:7.0.2
     ports:
       - "27017:27017"
-    environment:
-      MONGO_INITDB_DATABASE: hyperionIUSDB
     networks:
       - predictiveModuleNetwork
     command: mongod --bind_ip_all

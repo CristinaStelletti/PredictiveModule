@@ -11,10 +11,25 @@ import statsmodels.api as sm
 plotIO.kaleido.scope.mathjax = None
 
 
+def clean_dir(dir_path, filename):
+    files = os.listdir(dir_path)
+
+    # Itera su ogni file
+    for file in files:
+        # Verifica se il nome del file contiene la stringa desiderata
+        if filename in file:
+            # Conserva solo il file desiderato, rimuovendo gli altri
+            continue
+        else:
+            # Se il nome del file non è quello desiderato, rimuovilo
+            filepath = os.path.join(dir_path, file)
+            os.remove(filepath)
+
+
 def load_configs():
     print("Loading configurations...")
     configParser = configparser.ConfigParser()
-    config_path = os.path.join(os.path.dirname(os.path.dirname(__file__)), 'config.properties')
+    config_path = '../config.properties'
 
     try:
         configParser.read(config_path)

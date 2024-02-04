@@ -10,10 +10,10 @@ AVG_CONTEMPORANEITY_INDEX_FIELD = configs.get('JsonFields', 'average.contemporan
 FILE_PATH = configs.get('FilePaths', 'arimax.metrics.filepath')
 
 
-def splitting_dataset(series, indexes, testSetDim):
+def splitting_dataset(averages, indexes, testSetDim):
 
-    test_set = series[-testSetDim:]
-    train_set = series[:-testSetDim]
+    test_set = averages[-testSetDim:]
+    train_set = averages[:-testSetDim]
     indexes_test = indexes[-testSetDim:]
     indexes_train = indexes[:-testSetDim]
 
@@ -114,8 +114,8 @@ def runARIMAX(dataset, judge, judicial_object, test_perc, shift):
     testSet_dim = int(len(dataset[JUDGE_MOVING_AVG_FIELD]) * test_perc)
     print(testSet_dim)
 
-    train_set, test_set, indici_train, indici_test = splitting_dataset(dataset[JUDGE_MOVING_AVG_FIELD], dataset[AVG_CONTEMPORANEITY_INDEX_FIELD], testSet_dim)
+    train_set, test_set, indexes_train, indexes_test = splitting_dataset(dataset[JUDGE_MOVING_AVG_FIELD], dataset[AVG_CONTEMPORANEITY_INDEX_FIELD], testSet_dim)
 
-    predictions = predictions_and_metrics(judge, judicial_object, train_set, test_set, indici_train, indici_test, test_perc)
+    predictions = predictions_and_metrics(judge, judicial_object, train_set, test_set, indexes_train, indexes_test, test_perc)
 
     return predictions

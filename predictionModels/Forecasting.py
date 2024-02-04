@@ -1,8 +1,11 @@
 import csv
+import subprocess
+import sys
 from datetime import timedelta
 from pymongo import *
 import ARIMAX_Script, LSTM_MultiFeature, LSTM_Script, Utils
 import pandas as pd
+
 
 configs = Utils.load_configs()
 
@@ -62,18 +65,21 @@ def create_json_with_prediction(predictions, dataset, judicial_object, test_perc
     return new_json_list
 
 
-def computing_and_saving_predictions(dataset, judge, judicial_object, forecast_collection):
+def computing_and_saving_predictions(filepath, dataset, judge, judicial_object, forecast_collection):
     print(f"...Model creation for judicial object:{judicial_object} and for judge: {judge}")
     predictions = None
     TEST_PERC = 0
+    args = [filepath]
     if PREDICTIVE_MODEL == 'ARIMAX':
         TEST_PERC = TEST_PERC_ARIMAX
         predictions = ARIMAX_Script.runARIMAX(dataset, judge, judicial_object, TEST_PERC_ARIMAX, SHIFT)
     elif PREDICTIVE_MODEL == 'LSTM_Univariate':
         TEST_PERC = TEST_PERC_LSTM
+        subprocess.run([sys.executable, "UnivariateLSTM_optimization.py"] + args)
         predictions = LSTM_Script.runLSTM(dataset, judge, judicial_object)
     elif PREDICTIVE_MODEL == 'LSTM_Multivariate':
         TEST_PERC = TEST_PERC_LSTM
+        subprocess.run([sys.executable, "MultivariateLSTM_optimization.py"] + args)
         predictions = LSTM_MultiFeature.runLSTMMultiFeature(dataset, SHIFT, judge, judicial_object)
 
     if predictions is not None:
@@ -122,9 +128,9 @@ def processing(avg_collection, forecast_collection):
                         csv_writer.writerow(title)
                         for doc in result:
                             csv_writer.writerow(doc.values())
-
-                    dataset = pd.read_csv(f'../data/avg_indexes_{judicial_object}_{judge}.csv')
-                    computing_and_saving_predictions(dataset, judge, judicial_object, forecast_collection)
+                    filepath = f'../data/avg_indexes_{judicial_object}_{judge}.csv'
+                    dataset = pd.read_csv(filepath)
+                    computing_and_saving_predictions(filepath, dataset, judge, judicial_object, forecast_collection)
                 else:
                     print("Not enough averages to start forecasting")
     except Exception as e:
