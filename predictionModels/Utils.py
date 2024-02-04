@@ -11,6 +11,19 @@ import statsmodels.api as sm
 plotIO.kaleido.scope.mathjax = None
 
 
+def load_configs():
+    print("Loading configurations...")
+    configParser = configparser.ConfigParser()
+    config_path = '../config.properties'
+
+    try:
+        configParser.read(config_path)
+    except FileNotFoundError:
+        print("Error: Configuration file not found!")
+
+    return configParser
+
+
 def clean_dir(dir_path, filename):
     files = os.listdir(dir_path)
 
@@ -24,19 +37,6 @@ def clean_dir(dir_path, filename):
             # Se il nome del file non è quello desiderato, rimuovilo
             filepath = os.path.join(dir_path, file)
             os.remove(filepath)
-
-
-def load_configs():
-    print("Loading configurations...")
-    configParser = configparser.ConfigParser()
-    config_path = '../config.properties'
-
-    try:
-        configParser.read(config_path)
-    except FileNotFoundError:
-        print("Error: Configuration file not found!")
-
-    return configParser
 
 
 def computing_shift(dataset, avg_field, index_field):
