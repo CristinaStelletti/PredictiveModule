@@ -117,6 +117,9 @@ if __name__ == '__main__':
     X_train, y_train = Utils.split_sequence(serie_train, n_steps)
     X_test, y_test = Utils.split_sequence(serie_test, n_steps)
 
+    print(f'Tensorflow recognized devices: {tf.config.experimental.list_physical_devices()}')
+    print(f'Tensorflow recognize cuda: {tf.test.is_built_with_cuda()}')
+
     with tf.device('/gpu:0'):
         study = optuna.create_study(direction="minimize")
         # n_jobs = NUMBER OF PARALLEL  (python threads), for sequence configuration testing set to 1

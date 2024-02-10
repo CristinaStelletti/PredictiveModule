@@ -1,13 +1,21 @@
-version: '3'
+version: '1'
 services:
   predictiveModule:
-    image: predictive_module_image
+    image: predictive_image
+    environment:
+      - NVIDIA_VISIBLE_DEVICES=all
     volumes:
-      - ../PredictiveModule:/PredictiveModule
+      - ../PredictiveModule:/root/PredictiveModule
     networks:
       - predictiveModuleNetwork
     depends_on:
       - mongodb
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              capabilities: [gpu]
 
   mongodb:
     image: mongo:7.0.2
@@ -29,3 +37,4 @@ services:
 networks:
   predictiveModuleNetwork:
     driver: bridge
+

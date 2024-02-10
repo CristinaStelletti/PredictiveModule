@@ -12,7 +12,6 @@ plotIO.kaleido.scope.mathjax = None
 
 
 def load_configs():
-    print("Loading configurations...")
     configParser = configparser.ConfigParser()
     config_path = '../config.properties'
 

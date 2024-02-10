@@ -1,23 +1,52 @@
-FROM nvidia/cuda:11.8.0-cudnn8-runtime-ubuntu22.04
+FROM nvidia/cuda:11.8.0-base-ubuntu22.04
+SHELL ["/bin/bash", "-c"]
+
 ARG DEBIAN_FRONTEND=noninteractive
 
-COPY requirements.txt .
+RUN apt-get update
 
-RUN apt-get update && apt-get -y install software-properties-common
-RUN add-apt-repository ppa:deadsnakes/ppa
-RUN python3 --version
-RUN apt-get update && apt-get -y install python3.9
-RUN apt-get -y install python3-pip
+RUN apt-get install -y openssh-server curl nano
 
-RUN pip3 install --upgrade pip
-RUN pip3 install --no-cache-dir -r requirements.txt
+WORKDIR /root
 
-WORKDIR /PredictiveModule
+RUN curl -L -O https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh
 
-COPY . .
+RUN bash Miniconda3-latest-Linux-x86_64.sh -b \
+    && rm -f Miniconda3-latest-Linux-x86_64.sh
 
-WORKDIR /PredictiveModule/predictionModels
+RUN source .bashrc
+
+ENV PATH=$PATH:/root/miniconda3/bin
+RUN source .bashrc
+
+RUN conda install -c conda-forge -y cudatoolkit=11.8.0 cudnn
+
+RUN conda install -c conda-forge -y nvidia/label/cuda-11.8.0::cuda-nvcc
+
+ENV LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib/
+RUN echo 'export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/lib/' >> .bashrc
+RUN source .bashrc
+
+RUN conda init
+RUN source .bashrc
+
+RUN mkdir -p /root/miniconda3/etc/conda/activate.d
+
+RUN chsh -s /bin/bash
+
+ENV CONDA_OVERRIDE_CUDA="11.8"
+
+RUN mkdir /root/PredictiveModule
+
+COPY . /root/PredictiveModule
+
+RUN conda env update --file /root/PredictiveModule/requirements.yaml
+
+WORKDIR /root/PredictiveModule/predictionModels
 
 RUN chmod 744 ../config.properties
 
-CMD ["python3", "Forecasting.py"]
+ENV CUDA_DIR=$CUDA_DIR:/root/miniconda3
+ENV XLA_FLAGS="--xla_gpu_cuda_data_dir=/root/miniconda3"
+
+CMD ["conda", "run", "-n", "base", "python3", "Forecasting.py"]

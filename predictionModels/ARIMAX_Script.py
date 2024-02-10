@@ -92,7 +92,7 @@ def predictions_and_metrics(judge, judicial_object, train_set, test_set, indexes
     Utils.global_plotting(train_set, test_set, all_predictions[min_criterion][index], title=f"ARIMAX giudice {judge} materia {judicial_object} Confronto serie globale e predizioni")
 
     metrics = pd.DataFrame(
-        columns=['Judge', 'Data', 'Preprocessing', '%TEST', 'Criterion', 'Method', 'Order', 'MSE', 'RMSE', 'MAE',
+        columns=['Judge', '%TEST', 'Criterion', 'Method', 'Order', 'MSE', 'RMSE', 'MAE',
                  'MAPE(%)', 'R2'])
 
     new_row = {'Judge': judge, '%TEST': int(test_perc * 100),

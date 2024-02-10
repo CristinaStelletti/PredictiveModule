@@ -37,8 +37,6 @@ def objective(trial):
     idx = trial.suggest_categorical("model", [x for x in range(1, len(models))])
     # TRY USING BIDIRECTIONAL WRAPPER
     bidirectional = trial.suggest_categorical("bidirectional", [True, False])
-    # SELECT ACTIVATION FUNCTION (CHANGE TO SUIT YOUR PROBLEM)
-    lstm_activation = trial.suggest_categorical("lstm_act", ['relu', 'tanh'])
 
     # SELECT BATCH SIZE
     batch_sizes = [12, 32, 64]
@@ -47,23 +45,23 @@ def objective(trial):
     epochs = [100, 150, 200]
     n_epochs = trial.suggest_categorical('n_epochs', epochs)
 
-    opt = trial.suggest_categorical("opt", ['nadam', 'rmsprop'])
+    opt = trial.suggest_categorical("opt", ['nadam', 'adam'])
 
     model = Sequential()
-    model.add(Input((n_steps, n_features), None))
+    model.add(Input((N_STEPS, n_features), None))
     for unit in models[idx]:
         index = models[idx].index(unit)
         print("Index: ", index)
         if index != len(models[idx])-1:
             if bidirectional:
-                model.add(Bidirectional(LSTM(unit, return_sequences=True, activation=lstm_activation)))
+                model.add(Bidirectional(LSTM(unit, return_sequences=True)))
             else:
-                model.add(LSTM(unit, return_sequences=True, activation=lstm_activation))
+                model.add(LSTM(unit, return_sequences=True))
         else:
             if bidirectional:
-                model.add(Bidirectional(LSTM(unit, return_sequences=False, activation=lstm_activation)))
+                model.add(Bidirectional(LSTM(unit, return_sequences=False)))
             else:
-                model.add(LSTM(unit, return_sequences=False, activation=lstm_activation))
+                model.add(LSTM(unit, return_sequences=False))
 
     # TIME DISTRIBUTED LAYER SIMPY REPLIES THE LAST LSTM LAYER OUTPUTS AND APPLY TO EACH THE DENSE ACTIVATION FUNCTION
     # The TimeDistributed achieves this trick by applying the same Dense layer (same weights) to the LSTMs outputs for
@@ -111,7 +109,6 @@ if __name__ == '__main__':
     if SHIFT:
         dataset = Utils.computing_shift(dataset, JUDGE_MOVING_AVG_FIELD, AVG_CONTEMPORANEITY_INDEX_FIELD)
 
-    n_steps = N_STEPS
     n_features = 2
     perc_test = 0.10
     loss_function = 'mae'
@@ -133,8 +130,12 @@ if __name__ == '__main__':
     serie_train = np.hstack((y_train, X_train))
     serie_test = np.hstack((y_test, X_test))
 
-    X_train, y_train = Utils.split_sequence(serie_train, n_steps)
-    X_test, y_test = Utils.split_sequence(serie_test, n_steps)
+    X_train, y_train = Utils.split_sequence(serie_train, N_STEPS)
+    X_test, y_test = Utils.split_sequence(serie_test, N_STEPS)
+
+    print(f'Tensorflow recognized devices: {tf.config.experimental.list_physical_devices()}')
+
+    print(f'Tensorflow recognize cuda: {tf.test.is_built_with_cuda()}')
 
     with tf.device('/gpu:0'):
         study = optuna.create_study(direction="minimize")

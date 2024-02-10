@@ -6,7 +6,7 @@ from pymongo import *
 import ARIMAX_Script, LSTM_MultiFeature, LSTM_Script, Utils
 import pandas as pd
 
-
+print("Loading configurations...")
 configs = Utils.load_configs()
 
 # Load MongoDB config
@@ -27,6 +27,7 @@ AVG_CONTEMPORANEITY_INDEX_FIELD = configs.get('JsonFields', 'average.contemporan
 # Load ModelParams config
 PREDICTIVE_MODEL = configs.get('ModelParams', 'predictive.model')
 SHIFT = bool(configs.get('ModelParams', 'shift.option'))
+N_STEPS = int(configs.get('ModelParams', 'time.steps.LSTM'))
 
 # Load PredictionParams config
 TEST_PERC_ARIMAX = float(configs.get('PredictionParams', 'test.percentage.ARIMAX'))
@@ -38,16 +39,17 @@ MIN_OBS = int(configs.get('PredictionParams', 'minimum.number.observations'))
 def create_json_with_prediction(predictions, dataset, judicial_object, test_perc):
     new_json_list = []
     try:
-        dataset_test = dataset[-(int(len(dataset)*(test_perc))+1):]
-        data_prediction = pd.to_datetime(dataset_test[END_DATE_FIELD].iloc[0])
-        #data_prediction = datetime.utcfromtimestamp(int(data_prediction_unix))
+        if PREDICTIVE_MODEL == "ARIMAX":
+            dataset_test = dataset[-(int(len(dataset)*(test_perc))+1):]
+            data_prediction = pd.to_datetime(dataset_test[END_DATE_FIELD].iloc[0])
+        else:
+            dataset_test = dataset[-(int(len(dataset) * (test_perc)) + 1 - N_STEPS):]
+            data_prediction = pd.to_datetime(dataset_test[END_DATE_FIELD].iloc[0])
 
         for element in predictions:
             # Aggiungi x giorni alla data di previsione
             data_prediction = pd.to_datetime(data_prediction) + timedelta(SAMPLING_PERIOD)
             data_prediction_str = data_prediction.strftime('%Y-%m-%d')
-            # Converti la data di previsione in timestamp Unix
-            #data_prediction_unix = data_prediction.timestamp()
 
             json_data = {
                 JUDICIAL_OFFICE_FIELD: dataset[JUDICIAL_OFFICE_FIELD][0],
