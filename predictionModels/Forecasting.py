@@ -71,7 +71,7 @@ def computing_and_saving_predictions(filepath, dataset, judge, judicial_object, 
     print(f"...Model creation for judicial object:{judicial_object} and for judge: {judge}")
     predictions = None
     TEST_PERC = 0
-    args = [filepath]
+    args = [filepath, judge, judicial_object]
     if PREDICTIVE_MODEL == 'ARIMAX':
         TEST_PERC = TEST_PERC_ARIMAX
         predictions = ARIMAX_Script.runARIMAX(dataset, judge, judicial_object, TEST_PERC_ARIMAX, SHIFT)

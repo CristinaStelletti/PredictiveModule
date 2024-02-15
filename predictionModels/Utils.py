@@ -184,14 +184,12 @@ def global_plotting(y_train, y_test, y2, title):
     fig.show()
 
 
-def show_loss(history, title):
-    loss = history.history["loss"]
-    val_loss = history.history["val_loss"]
-    epochs = [x for x in range(1, len(loss))]
+def show_loss(train_loss, validation_loss, title):
+    epochs = [x for x in range(1, len(train_loss))]
 
     fig = go.Figure()
-    fig.add_trace(go.Scatter(x=epochs, y=loss, name="Training loss", mode="lines+markers", line=dict(color='goldenrod')))
-    fig.add_trace(go.Scatter(x=epochs, y=val_loss, name="Validation loss", mode="lines+markers", line=dict(color='purple')))
+    fig.add_trace(go.Scatter(x=epochs, y=train_loss, name="Training loss", mode="lines+markers", line=dict(color='goldenrod')))
+    fig.add_trace(go.Scatter(x=epochs, y=validation_loss, name="Validation loss", mode="lines+markers", line=dict(color='purple')))
     fig.update_layout(
         xaxis_title="Epochs",
         yaxis_title="Loss",
@@ -225,7 +223,6 @@ def show_loss(history, title):
         showlegend=True
     )
 
-    #fig.write_html(f'../plots/{title}.html')
     plotIO.write_image(fig, f'../plots/{title}.pdf')
     fig.show()
 

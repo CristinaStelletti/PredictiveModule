@@ -72,10 +72,15 @@ def objective(trial):
                                                     save_best_only=True, verbose=0, save_weights_only=False)
 
     # fit model
-    model.fit(X_train, y_train, epochs=n_epochs, validation_split=0.10, verbose=1, batch_size=batch_size,
+    history = model.fit(X_train, y_train, epochs=n_epochs, validation_split=0.10, verbose=1, batch_size=batch_size,
                         shuffle=False,
                         callbacks=[EarlyStopping(monitor="val_loss", patience=10, min_delta=0.01), checkpoint])
     # patience -> numero consecutivo di epoche che non portano a miglioramenti per cui si deve fermare
+
+    val_loss = history.history["val_loss"]
+    train_loss = history.history['loss']
+    trial.set_user_attr('train_loss', train_loss)
+    trial.set_user_attr('val_loss', val_loss)
 
     model.load_weights(checkpoint_filepath)
 
@@ -94,6 +99,8 @@ def objective(trial):
 if __name__ == '__main__':
 
     file_path = sys.argv[1]
+    judge = sys.argv[2]
+    judicial_object = sys.argv[3]
 
     dataset = pd.read_csv(file_path)
     data = dataset[JUDGE_MOVING_AVG_FIELD]
@@ -128,4 +135,7 @@ if __name__ == '__main__':
         study.optimize(objective, n_jobs=2, show_progress_bar=True, n_trials=100, gc_after_trial=True)
 
     filename = f'checkpoint_{study.best_trial.number}.hdf5'
+    training_loss = study.best_trial.user_attrs['train_loss']
+    validation_loss = study.best_trial.user_attrs['val_loss']
+    Utils.show_loss(training_loss, validation_loss, f"LSTM Univariato - Giudice {judge} materia {judicial_object} - Confronto train e validation loss")
     Utils.clean_dir(CHECKPOINTING_DIR, filename)

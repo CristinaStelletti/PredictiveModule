@@ -31,8 +31,9 @@ def predictions_and_metrics(judge, judicial_object, train_set, test_set, indexes
     r2_final = {}
     model_order = {}
     all_predictions = {}
-    min_rmse = np.inf
+    min_mae = np.inf
     min_criterion = ''
+
     for criterion in inf_criterion:
         mse_final[criterion] = []
         rmse_final[criterion] = []
@@ -41,6 +42,9 @@ def predictions_and_metrics(judge, judicial_object, train_set, test_set, indexes
         r2_final[criterion] = []
         model_order[criterion] = []
         all_predictions[criterion] = []
+
+        indexes_train = indexes_train.reshape(-1, 1)
+
         for method in methods:
             arima_model = auto_arima(
                 train_set,
@@ -62,14 +66,10 @@ def predictions_and_metrics(judge, judicial_object, train_set, test_set, indexes
 
             # Visualizza un riassunto del modello
             print(fit_model.summary())
-            prediction_values = fit_model.predict(start=len(train_set), end=len(train_set) + len(test_set) - 1,
-                                                  exog=indexes_test)
+            prediction_values = fit_model.predict(start=len(train_set), end=len(train_set) + len(test_set) - 1, exog=indexes_test)
 
             prediction_values = np.array(prediction_values)
             test_set = np.array(test_set)
-
-            print(len(test_set))
-            print(len(prediction_values))
 
             if not all(elemento == 0 for elemento in prediction_values):
                 mse, rmse, mae, mape, r2 = Utils.computing_metrics(test_set, prediction_values)
@@ -82,20 +82,20 @@ def predictions_and_metrics(judge, judicial_object, train_set, test_set, indexes
                 all_predictions[criterion].append(prediction_values)
 
     for criterion in inf_criterion:
-        if min_rmse > min(rmse_final[criterion]):
-            min_rmse = min(rmse_final[criterion])
+        if min_mae > min(mae_final[criterion]):
+            min_mae = min(mae_final[criterion])
             min_criterion = criterion
 
-    index = rmse_final[min_criterion].index(min_rmse)
+    index = mae_final[min_criterion].index(min_mae)
     print(f"\n\nMigliori risultati raggiunti con l'information criterion {min_criterion} e il metodo {methods[index]}")
-    Utils.plotting(test_set, all_predictions[min_criterion][index], len(test_set), title=f"ARIMAX giudice {judge} materia {judicial_object} Confronto test set e predizioni")
-    Utils.global_plotting(train_set, test_set, all_predictions[min_criterion][index], title=f"ARIMAX giudice {judge} materia {judicial_object} Confronto serie globale e predizioni")
+    Utils.plotting(test_set, all_predictions[min_criterion][index], len(test_set), title=f"ARIMAX - giudice {judge} - materia {judicial_object} - Confronto test set e predizioni")
+    Utils.global_plotting(train_set, test_set, all_predictions[min_criterion][index], title=f"ARIMAX - giudice {judge} - materia {judicial_object} - Confronto serie globale e predizioni")
 
     metrics = pd.DataFrame(
-        columns=['Judge', '%TEST', 'Criterion', 'Method', 'Order', 'MSE', 'RMSE', 'MAE',
+        columns=['Judge', 'Judicial Object', '%TEST', 'Criterion', 'Method', 'Order', 'MSE', 'RMSE', 'MAE',
                  'MAPE(%)', 'R2'])
 
-    new_row = {'Judge': judge, '%TEST': int(test_perc * 100),
+    new_row = {'Judge': judge, 'Judicial Object': judicial_object, '%TEST': int(test_perc * 100),
                'Criterion': min_criterion, 'Method': methods[index], 'Order': model_order[min_criterion][index],
                'MSE': mse_final[min_criterion][index], 'RMSE': rmse_final[min_criterion][index],
                'MAE': mae_final[min_criterion][index], 'MAPE(%)': mape_final[min_criterion][index],
@@ -112,7 +112,6 @@ def runARIMAX(dataset, judge, judicial_object, test_perc, shift):
         dataset = Utils.computing_shift(dataset, JUDGE_MOVING_AVG_FIELD, AVG_CONTEMPORANEITY_INDEX_FIELD)
 
     testSet_dim = int(len(dataset[JUDGE_MOVING_AVG_FIELD]) * test_perc)
-    print(testSet_dim)
 
     train_set, test_set, indexes_train, indexes_test = splitting_dataset(dataset[JUDGE_MOVING_AVG_FIELD], dataset[AVG_CONTEMPORANEITY_INDEX_FIELD], testSet_dim)
 
